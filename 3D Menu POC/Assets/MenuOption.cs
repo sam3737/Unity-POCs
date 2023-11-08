@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class MenuOption : MonoBehaviour
 {
@@ -18,11 +20,15 @@ public class MenuOption : MonoBehaviour
     private Coroutine moveCoroutine;
     private Coroutine rotationCoroutine;
 
+    private TMP_Text tooltipText;
+
     private void Awake()
     {
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
         audioSource.clip = myAudioClip;
+
+        tooltipText = GameObject.Find("tooltipText").GetComponent<TMP_Text>();
 
         inSubmenu = false;
     }
@@ -61,13 +67,21 @@ public class MenuOption : MonoBehaviour
     {
         audioSource.Play();
         if (!inSubmenu)
+        {
             transform.Rotate(new Vector3(0, 10, 0));
+            tooltipText.text = optionName;
+        }
+            
     }
 
     void OnMouseExit()
     {
         if (!inSubmenu)
+        {
             transform.Rotate(new Vector3(0, -10, 0));
+            tooltipText.text = "Welcome";
+        }
+            
     }
 
     // Start a subroutine to smoothly move the camera to the target position

@@ -22,7 +22,6 @@ public class healthBar : MonoBehaviour
         holdCurrentHealth = currentHealth;
         holdMaxHealth = maxHealth;
         setMaxHealth(maxHealth);
-        setCurrentHealth(currentHealth);
     }
 
     // Update is called once per frame
@@ -48,7 +47,7 @@ public class healthBar : MonoBehaviour
             foreach (Transform child in transform)
             {
                 Destroy(child.gameObject);
-            } 
+            }
 
             GameObject healthBarBase = Instantiate(healthBarBasePrefab);
             healthBarBase.transform.SetParent(transform);

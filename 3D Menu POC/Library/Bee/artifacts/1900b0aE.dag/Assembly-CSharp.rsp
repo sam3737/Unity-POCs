@@ -367,8 +367,11 @@
 "Assets/backgroundMove.cs"
 "Assets/healthBar.cs"
 "Assets/healthBarElement.cs"
+"Assets/levelButton.cs"
+"Assets/levelText.cs"
 "Assets/MenuManager.cs"
 "Assets/MenuOption.cs"
+"Assets/tooltipText.cs"
 -langversion:9.0
 
 /deterministic

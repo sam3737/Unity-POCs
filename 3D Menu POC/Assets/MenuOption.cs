@@ -10,6 +10,8 @@ public class MenuOption : MonoBehaviour
     public bool subMenu;
     public Vector3 cameraPos;
     public Vector3 cameraRotation;
+    private Vector3 defaultCameraPos;
+    private Vector3 defaultCameraRotation;
     public float moveSpeed;
     public float rotationSpeed;
     private bool inSubmenu;
@@ -20,7 +22,9 @@ public class MenuOption : MonoBehaviour
     private Coroutine moveCoroutine;
     private Coroutine rotationCoroutine;
 
-    private TMP_Text tooltipText;
+    private Quaternion defaultRotation;
+
+    private tooltipText ttText;
 
     private void Awake()
     {
@@ -28,98 +32,91 @@ public class MenuOption : MonoBehaviour
         audioSource.playOnAwake = false;
         audioSource.clip = myAudioClip;
 
-        tooltipText = GameObject.Find("tooltipText").GetComponent<TMP_Text>();
+        defaultCameraPos = Camera.main.transform.position;
+        defaultCameraRotation = Camera.main.transform.rotation.eulerAngles;
+
+        defaultRotation = transform.rotation;
+
+        ttText = GameObject.Find("tooltipText").GetComponent<tooltipText>();
 
         inSubmenu = false;
     }
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(1)) // Detect right click 
+        if (Input.GetMouseButtonDown(1) && inSubmenu) // Detect right click 
         {
             if (moveCoroutine != null)
                 StopCoroutine(moveCoroutine);
-            if (rotationCoroutine != null)
-                StopCoroutine(rotationCoroutine);
-
-            moveCoroutine = StartCoroutine(moveCameraPos(MenuManager.defaultCameraPosition));
-            rotationCoroutine = StartCoroutine(moveCameraRotBack());
+            //if (rotationCoroutine != null)
+            //StopCoroutine(rotationCoroutine);
+            ttText.newText = "Welcome";
+            moveCoroutine = StartCoroutine(MoveCamera(defaultCameraPos, defaultCameraRotation, false));
+            //moveCoroutine = StartCoroutine(moveCameraPos(MenuManager.defaultCameraPosition));
+            //rotationCoroutine = StartCoroutine(moveCameraRotBack());
         }
+
     }
 
     void OnMouseDown()
     {
-        Debug.Log(optionName);
-        if (subMenu)
+        if (Input.GetMouseButtonDown(0))
         {
             if (moveCoroutine != null)
                 StopCoroutine(moveCoroutine);
-            if (rotationCoroutine != null)
-                StopCoroutine(rotationCoroutine);
-
-            moveCoroutine = StartCoroutine(moveCameraPos(cameraPos));
-            rotationCoroutine = StartCoroutine(moveCameraRot(cameraRotation));
-            MenuManager.enabled = false;
+            moveCoroutine = StartCoroutine(MoveCamera(cameraPos, cameraRotation, true));
+            inSubmenu = true;
         }
     }
-
+    
     void OnMouseEnter()
     {
         audioSource.Play();
         if (!inSubmenu)
         {
             transform.Rotate(new Vector3(0, 10, 0));
-            tooltipText.text = optionName;
+            ttText.newText = optionName;
         }
-            
     }
 
     void OnMouseExit()
     {
         if (!inSubmenu)
         {
-            transform.Rotate(new Vector3(0, -10, 0));
-            tooltipText.text = "Welcome";
+            transform.rotation = defaultRotation;
+            //transform.Rotate(new Vector3(0, -10, 0));
+            ttText.newText = "Welcome";
         }
             
     }
 
-    // Start a subroutine to smoothly move the camera to the target position
-    IEnumerator moveCameraPos(Vector3 target)
+    IEnumerator MoveCamera(Vector3 targetPosition, Vector3 targetRotationEulerAngles, bool newInSub)
     {
-        while (Vector3.Distance(Camera.main.transform.position, target) > 0.001f)
+        float startTime = Time.time;
+
+        Vector3 initialPosition = Camera.main.transform.position;
+        Quaternion initialRotation = Camera.main.transform.rotation;
+
+        Debug.Log("INIT: " + initialPosition + "  " + initialRotation.eulerAngles);
+        Debug.Log("TARGET: " + targetPosition + "  " + targetRotationEulerAngles);
+
+        float journeyLengthPos = Vector3.Distance(initialPosition, targetPosition);
+        float journeyLengthRot = Quaternion.Angle(initialRotation, Quaternion.Euler(targetRotationEulerAngles));
+
+        while (Vector3.Distance(Camera.main.transform.position, targetPosition) > 0.001f ||
+               Quaternion.Angle(Camera.main.transform.rotation, Quaternion.Euler(targetRotationEulerAngles)) > 0.001f)
         {
-            float step = moveSpeed * Time.deltaTime;
-            Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, target, step);
+            float distCoveredPos = (Time.time - startTime) * moveSpeed;
+            float fracJourneyPos = distCoveredPos / journeyLengthPos;
+            float fracJourneyRot = fracJourneyPos; 
+
+            Camera.main.transform.position = Vector3.Lerp(initialPosition, targetPosition, fracJourneyPos);
+            Camera.main.transform.rotation = Quaternion.Lerp(initialRotation, Quaternion.Euler(targetRotationEulerAngles), fracJourneyRot);
+
             yield return null;
         }
 
-        Camera.main.transform.position = target;
-    }
-
-    // Start a subroutine to smoothly move the camera to the target rotation
-    IEnumerator moveCameraRot(Vector3 target)
-    {
-        while (Quaternion.Angle(Camera.main.transform.rotation, Quaternion.Euler(target)) > 0.001f)
-        {
-            float step = rotationSpeed * Time.deltaTime;
-            Camera.main.transform.rotation = Quaternion.Lerp(Camera.main.transform.rotation, Quaternion.Euler(target), step);
-            yield return null;
-        }
-
-        Camera.main.transform.rotation = Quaternion.Euler(target);
-    }
-
-    // Start a subroutine to smoothly move the camera to the target rotation
-    IEnumerator moveCameraRotBack()
-    {
-        while (Quaternion.Angle(Camera.main.transform.rotation, Quaternion.Euler(MenuManager.getTargetRotation())) > 0.001f)
-        {
-            float step = rotationSpeed * Time.deltaTime;
-            Camera.main.transform.rotation = Quaternion.Lerp(Camera.main.transform.rotation, Quaternion.Euler(MenuManager.getTargetRotation()), step);
-            yield return null;
-        }
-
-        Camera.main.transform.rotation = Quaternion.Euler(MenuManager.getTargetRotation());
+        inSubmenu = newInSub;
+        transform.rotation = defaultRotation;
     }
 }
